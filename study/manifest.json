@@ -1,0 +1,15 @@
+{
+  "name": "Study HUD — AP Agent",
+  "short_name": "Study HUD",
+  "description": "AP Psychology, AP World History, and Precalc CBE tracker with deadlines, grade goals, and practice quizzes",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0A0D12",
+  "theme_color": "#0A0D12",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "../icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "../icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
