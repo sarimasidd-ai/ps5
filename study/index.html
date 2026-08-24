@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark only">
+<title>Study HUD — AP Agent</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0A0D12">
+<link rel="icon" href="../icon-512.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Study HUD">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0A0D12;color:#EDEFF3;font-family:'Manrope',sans-serif;min-height:100vh}
+
+.sa-shell{max-width:520px;margin:0 auto;padding:24px 18px 64px}
+
+.sa-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
+.sa-brand{display:flex;flex-direction:column;gap:4px}
+.sa-eyebrow{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.22em;color:#6B7686;text-transform:uppercase}
+.sa-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:24px;letter-spacing:-.01em;color:#F2F4F7}
+.sa-icon-btn{background:#151A21;border:1px solid #232A35;color:#C7CDD6;border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;flex:none;font-size:16px}
+.sa-icon-btn:hover{border-color:#E8B84B;color:#E8B84B}
+
+.sa-settings{background:#131820;border:1px solid #232A35;border-radius:14px;padding:16px;margin-bottom:18px;display:none;flex-direction:column;gap:12px}
+.sa-settings.open{display:flex}
+.sa-field label{display:block;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;color:#8A94A3;text-transform:uppercase;margin-bottom:6px}
+.sa-field input,.sa-field textarea,.sa-field select{width:100%;background:#0E1219;border:1px solid #232A35;border-radius:8px;padding:11px 12px;color:#EDEFF3;font-family:'Manrope',sans-serif;font-size:14.5px}
+.sa-field input:focus,.sa-field textarea:focus,.sa-field select:focus{outline:2px solid #E8B84B;outline-offset:1px;border-color:#E8B84B}
+.sa-row{display:flex;gap:8px}
+.sa-row>*{flex:1}
+
+.sa-nav{display:flex;gap:6px;margin-bottom:20px;overflow-x:auto}
+.sa-navbtn{flex:none;background:#131820;border:1px solid #1E252F;color:#8A94A3;border-radius:100px;padding:9px 16px;font-family:'Manrope',sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:.15s;white-space:nowrap}
+.sa-navbtn.on{background:#E8B84B;border-color:#E8B84B;color:#12100A}
+
+.sa-card{background:#131820;border:1px solid #1E252F;border-radius:16px;padding:16px;margin-bottom:16px}
+.sa-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sa-card-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15.5px;color:#F2F4F7}
+.sa-sub{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;color:#6B7686;text-transform:uppercase}
+
+.sa-empty{color:#6B7686;font-size:13.5px;text-align:center;padding:20px 10px;border:1px dashed #232A35;border-radius:12px}
+
+.sa-focus{background:linear-gradient(135deg,#1A1510,#131820);border:1px solid #3A2E17;border-radius:14px;padding:14px 16px;margin-bottom:16px;font-size:13.5px;line-height:1.5;color:#E8D9B8}
+.sa-focus b{color:#E8B84B}
+
+.sa-uprow{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid #171C24}
+.sa-uprow:last-child{border-bottom:none}
+.sa-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.sa-updot-danger{background:#E8604B}.sa-updot-warn{background:#E8B84B}.sa-updot-ok{background:#4FE0A0}
+.sa-uptext{flex:1;min-width:0}
+.sa-uptitle{font-size:13.5px;color:#EDEFF3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sa-upsub{font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7686;margin-top:2px}
+.sa-upchip{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 9px;border-radius:100px;flex:none}
+.sa-upchip-danger{background:rgba(232,96,75,.15);color:#E8604B}
+.sa-upchip-warn{background:rgba(232,184,75,.15);color:#E8B84B}
+.sa-upchip-ok{background:rgba(79,224,160,.15);color:#4FE0A0}
+
+.sa-gradegrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.sa-gradecard{background:#131820;border:1px solid #1E252F;border-radius:14px;padding:14px;text-align:center;cursor:pointer;transition:.15s}
+.sa-gradecard:hover{border-color:#E8B84B}
+.sa-gradecard-label{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:#6B7686;margin-bottom:6px;text-transform:uppercase}
+.sa-gradecard-pct{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:26px}
+.sa-gradecard-target{font-family:'JetBrains Mono',monospace;font-size:10px;color:#5A6472;margin-top:3px}
+
+.sa-gaugewrap{position:relative;width:180px;height:180px;margin:4px auto 14px}
+.sa-gauge{width:100%;height:100%;overflow:visible}
+.sa-ring-track{stroke:#1B222C}
+.sa-ring-fill{transition:stroke-dasharray .6s cubic-bezier(.22,.9,.3,1)}
+.sa-gauge-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center}
+.sa-gauge-amount{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;letter-spacing:-.02em;color:#F2F4F7}
+.sa-gauge-of{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#6B7686;letter-spacing:.05em}
+
+.sa-needbox{background:#0E1219;border:1px solid #232A35;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.5;color:#C7CDD6;margin-bottom:16px}
+
+.sa-catlist{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.sa-catrow{display:flex;align-items:center;gap:8px;background:#0E1219;border:1px solid #1E252F;border-radius:9px;padding:9px 11px}
+.sa-catname{flex:1;font-size:13.5px}
+.sa-catweight{font-family:'JetBrains Mono',monospace;font-size:12px;color:#8A94A3;flex:none}
+.sa-catdel{background:none;border:none;color:#3D4552;cursor:pointer;font-size:14px;flex:none}
+.sa-catdel:hover{color:#E8604B}
+
+.sa-btn{border:none;border-radius:9px;padding:11px 0;font-family:'Manrope',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:.15s;width:100%}
+.sa-btn-gold{background:#E8B84B;color:#12100A}
+.sa-btn-gold:hover{background:#F0C666}
+.sa-btn-ghost{background:#151A21;border:1px solid #232A35;color:#C7CDD6}
+.sa-btn-ghost:hover{border-color:#E8B84B;color:#E8B84B}
+.sa-btn-sm{padding:8px 14px;width:auto;font-size:12.5px;border-radius:8px}
+
+.sa-alist{display:flex;flex-direction:column;gap:2px;margin-bottom:12px}
+.sa-arow{display:flex;align-items:center;gap:8px;padding:10px 4px;border-bottom:1px solid #171C24;flex-wrap:wrap}
+.sa-arow:last-child{border-bottom:none}
+.sa-aname{flex:1;min-width:110px;font-size:13.5px}
+.sa-acat{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7686;text-transform:uppercase}
+.sa-adue{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#5A6472;flex:none}
+.sa-ascore{width:64px;flex:none;background:#0E1219;border:1px solid #232A35;border-radius:7px;padding:6px 7px;color:#EDEFF3;font-size:12.5px;font-family:'JetBrains Mono',monospace}
+.sa-aof{font-family:'JetBrains Mono',monospace;font-size:11px;color:#5A6472;flex:none}
+.sa-adel{background:none;border:none;color:#3D4552;cursor:pointer;font-size:13px;flex:none}
+.sa-adel:hover{color:#E8604B}
+
+.sa-unitrow{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid #171C24}
+.sa-unitrow:last-child{border-bottom:none}
+.sa-unitname{flex:1;font-size:13.5px}
+.sa-unitmastery{font-family:'JetBrains Mono',monospace;font-size:11px;flex:none;min-width:70px;text-align:right}
+
+.sa-qcard{background:#0E1219;border:1px solid #232A35;border-radius:12px;padding:16px;margin-bottom:12px}
+.sa-qprog{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#6B7686;margin-bottom:10px}
+.sa-qtext{font-size:14.5px;line-height:1.5;margin-bottom:14px;color:#F2F4F7}
+.sa-choice{display:block;width:100%;text-align:left;background:#151A21;border:1px solid #232A35;color:#EDEFF3;border-radius:9px;padding:11px 13px;font-size:13.5px;margin-bottom:8px;cursor:pointer;transition:.15s;font-family:'Manrope',sans-serif}
+.sa-choice:hover{border-color:#E8B84B}
+.sa-choice-correct{border-color:#4FE0A0;background:rgba(79,224,160,.1);color:#4FE0A0}
+.sa-choice-wrong{border-color:#E8604B;background:rgba(232,96,75,.1);color:#E8604B}
+.sa-explain{font-size:12.5px;line-height:1.5;color:#8A94A3;background:#131820;border-radius:8px;padding:10px 12px;margin:10px 0}
+
+.sa-topicrow{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid #171C24}
+.sa-topicrow:last-child{border-bottom:none}
+.sa-topicrow input[type=checkbox]{width:18px;height:18px;accent-color:#4FE0A0;flex:none}
+.sa-topicname{flex:1;font-size:13.5px}
+.sa-topicname.done{color:#5A6472;text-decoration:line-through}
+
+.sa-progressbar{height:8px;background:#1B222C;border-radius:100px;overflow:hidden;margin:10px 0}
+.sa-progressfill{height:100%;background:#4FE0A0;transition:width .4s ease}
+
+textarea.sa-notes{min-height:90px;resize:vertical}
+
+@media (prefers-reduced-motion: reduce){.sa-ring-fill,.sa-progressfill{transition:none}}
+</style>
+</head>
+<body>
+
+<div class="sa-shell">
+  <header class="sa-header">
+    <div class="sa-brand">
+      <span class="sa-eyebrow">STUDY HUD</span>
+      <h1 class="sa-title">AP AGENT</h1>
+    </div>
+    <button class="sa-icon-btn" id="settingsBtn" aria-label="Settings">⚙</button>
+  </header>
+
+  <div class="sa-settings" id="settingsPanel">
+    <div class="sa-field">
+      <label for="targetInput">Target grade (%) — applies to AP Psych &amp; World</label>
+      <input id="targetInput" type="number" inputmode="numeric" placeholder="90">
+    </div>
+    <div class="sa-field">
+      <label for="examDateInput">Precalc CBE exam date</label>
+      <input id="examDateInput" type="date">
+    </div>
+    <button class="sa-btn sa-btn-gold" id="saveSettingsBtn">Save settings</button>
+    <button class="sa-btn sa-btn-ghost" id="notifBtn">Enable due-date reminders</button>
+  </div>
+
+  <nav class="sa-nav">
+    <button class="sa-navbtn" data-tab="dashboard">Dashboard</button>
+    <button class="sa-navbtn" data-tab="psych">AP Psych</button>
+    <button class="sa-navbtn" data-tab="world">AP World</button>
+    <button class="sa-navbtn" data-tab="precalc">Precalc CBE</button>
+  </nav>
+
+  <div id="view"></div>
+</div>
+
+<script>
+(function(){
+  var STORAGE_KEY = 'ap-agent-data-v1';
+
+  var DEFAULT_CATEGORIES = function(){
+    return [
+      {id:'tests', name:'Tests / Exams', weight:40},
+      {id:'quizzes', name:'Quizzes', weight:20},
+      {id:'frq', name:'FRQs / Essays', weight:20},
+      {id:'hw', name:'Homework / Classwork', weight:15},
+      {id:'part', name:'Participation', weight:5}
+    ];
+  };
+
+  var PSYCH_UNITS = [
+    'Scientific Foundations of Psychology','Biological Bases of Behavior','Sensation and Perception',
+    'Learning','Cognitive Psychology','Developmental Psychology','Motivation, Emotion, and Personality',
+    'Clinical Psychology','Social Psychology'
+  ];
+  var WORLD_UNITS = [
+    'The Global Tapestry (1200-1450)','Networks of Exchange (1200-1450)','Land-Based Empires (1450-1750)',
+    'Transoceanic Interconnections (1450-1750)','Revolutions (1750-1900)','Consequences of Industrialization (1750-1900)',
+    'Global Conflict (1900-present)','Cold War and Decolonization (1900-present)','Globalization (1900-present)'
+  ];
+  var PRECALC_TOPICS = [
+    'Functions: domain, range, transformations','Polynomial functions & end behavior','Rational functions & asymptotes',
+    'Exponential functions & growth/decay','Logarithmic functions & properties','Trigonometric functions & the unit circle',
+    'Graphing trig functions (amplitude, period, shift)','Trigonometric identities','Solving trigonometric equations',
+    'Law of Sines & Law of Cosines','Systems of equations & matrices','Sequences & series',
+    'Vectors','Conic sections','Limits & continuity (intro)'
+  ];
+
+  function defaultUnits(names, prefix){
+    return names.map(function(n,i){ return {id: prefix+(i+1), name:n}; });
+  }
+
+  var QUIZ_BANK = {
+    psych: {
+      p1: [
+        {q:"Which research method allows psychologists to determine cause and effect?", c:["Naturalistic observation","Case study","Experiment","Correlational study"], a:2, e:"Only controlled experiments manipulate an independent variable to isolate cause and effect."},
+        {q:"A negative correlation coefficient of -0.85 indicates:", c:["A weak relationship between variables","As one variable increases, the other decreases strongly","No relationship exists","The study was poorly designed"], a:1, e:"The negative sign shows an inverse relationship; 0.85 magnitude shows it's strong."},
+        {q:"In an experiment testing a new study technique, the group that does NOT receive the technique is called the:", c:["Experimental group","Control group","Confound","Placebo"], a:1, e:"The control group serves as a baseline comparison."}
+      ],
+      p2: [
+        {q:"Neurotransmitters cross the ___ to bind to receptors on the next neuron.", c:["myelin sheath","synaptic gap","axon terminal","dendrite"], a:1, e:"The synaptic gap (synapse) is the space neurotransmitters cross between neurons."},
+        {q:"Damage to the ___ would most likely impair balance and coordination.", c:["cerebellum","amygdala","hippocampus","hypothalamus"], a:0, e:"The cerebellum coordinates voluntary movement, balance, and posture."},
+        {q:"The autonomic nervous system's \"fight-or-flight\" response is triggered by the:", c:["parasympathetic nervous system","sympathetic nervous system","somatic nervous system","central nervous system"], a:1, e:"The sympathetic nervous system arouses the body for action in stressful situations."}
+      ],
+      p3: [
+        {q:"The smallest detectable difference between two stimuli is called the:", c:["absolute threshold","difference threshold","sensory adaptation","signal detection"], a:1, e:"Difference threshold (just noticeable difference) is the minimum change detectable 50% of the time."},
+        {q:"Which theory explains color vision by proposing three types of cones sensitive to red, green, and blue?", c:["Opponent-process theory","Trichromatic theory","Gate-control theory","Place theory"], a:1, e:"The Young-Helmholtz trichromatic theory proposes three cone types for color vision."},
+        {q:"Grouping similar items together when perceiving a scene illustrates the Gestalt principle of:", c:["proximity","closure","similarity","continuity"], a:2, e:"Similarity groups elements that look alike into a unified whole."}
+      ],
+      p4: [
+        {q:"In classical conditioning, a previously neutral stimulus that comes to trigger a response is called the:", c:["unconditioned stimulus","conditioned stimulus","conditioned response","unconditioned response"], a:1, e:"Through pairing, the neutral stimulus becomes a conditioned stimulus."},
+        {q:"Removing a disliked chore for cleaning your room is an example of:", c:["positive reinforcement","negative reinforcement","positive punishment","negative punishment"], a:1, e:"Negative reinforcement increases behavior by removing an aversive stimulus."},
+        {q:"Learning by watching and imitating others, as in Bandura's Bobo doll experiment, is called:", c:["operant conditioning","observational learning","classical conditioning","latent learning"], a:1, e:"Observational (social) learning occurs through watching a model."}
+      ],
+      p5: [
+        {q:"The tendency to search for information that confirms one's preexisting beliefs is:", c:["availability heuristic","confirmation bias","representativeness heuristic","hindsight bias"], a:1, e:"Confirmation bias leads people to favor information supporting existing views."},
+        {q:"Which memory store holds a small amount of information for about 15-30 seconds?", c:["sensory memory","short-term/working memory","long-term memory","implicit memory"], a:1, e:"Short-term (working) memory has limited capacity and duration without rehearsal."},
+        {q:"Judging the likelihood of an event based on how easily examples come to mind is the:", c:["availability heuristic","representativeness heuristic","anchoring effect","framing effect"], a:0, e:"The availability heuristic relies on the ease of recalling examples."}
+      ],
+      p6: [
+        {q:"According to Piaget, a child who understands a liquid's quantity stays the same when poured into a different container has developed:", c:["object permanence","conservation","egocentrism","theory of mind"], a:1, e:"Conservation is achieved in the concrete operational stage."},
+        {q:"Erikson's stage of identity vs. role confusion occurs primarily during:", c:["infancy","early childhood","adolescence","late adulthood"], a:2, e:"Adolescents work to establish a personal identity in this psychosocial stage."},
+        {q:"An infant's distress when separated from a caregiver, studied by Mary Ainsworth, is assessed using the:", c:["Strange Situation","Visual Cliff","Preferential Looking","Habituation Paradigm"], a:0, e:"The Strange Situation procedure measures attachment style."}
+      ],
+      p7: [
+        {q:"Maslow's hierarchy of needs places ___ at the base of the pyramid.", c:["self-actualization","physiological needs","esteem","belongingness"], a:1, e:"Physiological needs (food, water, sleep) form the foundation."},
+        {q:"The James-Lange theory of emotion proposes that:", c:["emotion and arousal occur simultaneously","physiological arousal precedes and causes the emotional experience","cognitive appraisal determines emotion before arousal","emotions are purely learned responses"], a:1, e:"James-Lange holds that we feel emotion because we perceive our body's physiological response."},
+        {q:"The Big Five personality traits include openness, conscientiousness, extraversion, agreeableness, and:", c:["neuroticism","narcissism","locus of control","self-efficacy"], a:0, e:"OCEAN — Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism."}
+      ],
+      p8: [
+        {q:"Persistent, excessive worry about many aspects of life for six months or more suggests:", c:["obsessive-compulsive disorder","generalized anxiety disorder","panic disorder","specific phobia"], a:1, e:"GAD involves chronic, excessive worry not tied to one specific trigger."},
+        {q:"The DSM-5 is used by clinicians primarily to:", c:["prescribe medication dosages","classify and diagnose psychological disorders","conduct psychotherapy sessions","measure IQ"], a:1, e:"The DSM-5 provides standardized criteria for diagnosing mental disorders."},
+        {q:"A therapy approach focused on identifying and changing distorted thought patterns is:", c:["psychoanalysis","cognitive-behavioral therapy","humanistic therapy","biomedical therapy"], a:1, e:"CBT targets maladaptive thoughts and behaviors directly."}
+      ],
+      p9: [
+        {q:"Conforming to group behavior and internalizing the group's beliefs even when alone afterward reflects:", c:["compliance","obedience","private acceptance","groupthink"], a:2, e:"Private acceptance is genuine internalized belief change, unlike surface compliance."},
+        {q:"In Milgram's obedience study, participants were more likely to obey when:", c:["the authority figure was in the same room","the learner was in the same room","other participants disobeyed","the study was in a strip-mall office"], a:0, e:"Physical proximity of the authority figure increased obedience rates."},
+        {q:"Attributing someone's tardiness to laziness rather than traffic illustrates the:", c:["self-serving bias","fundamental attribution error","actor-observer bias","false consensus effect"], a:1, e:"The fundamental attribution error overemphasizes personal traits over situational factors."}
+      ]
+    },
+    world: {
+      w1: [
+        {q:"The Mali Empire's wealth in this period was based primarily on control of trade in:", c:["silk and spices","gold and salt","tea and porcelain","sugar and rum"], a:1, e:"Mali (under rulers like Mansa Musa) dominated trans-Saharan gold-salt trade."},
+        {q:"Which empire's civil service exam system, rooted in Confucian principles, influenced governance across East Asia?", c:["Song Dynasty China","Delhi Sultanate","Byzantine Empire","Aztec Empire"], a:0, e:"Song China expanded the civil service examination system rooted in Confucianism."},
+        {q:"The Great Zimbabwe civilization grew wealthy primarily through trade in:", c:["gold and ivory","cotton and indigo","furs and timber","sugar and tobacco"], a:0, e:"Great Zimbabwe controlled regional trade exporting gold and ivory to the Swahili coast."}
+      ],
+      w2: [
+        {q:"The Mongol Empire's control of trade routes facilitated the:", c:["Columbian Exchange","Pax Mongolica","Atlantic Slave Trade","Bantu Migrations"], a:1, e:"\"Pax Mongolica\" describes the relative safety and connectivity along the Silk Roads under Mongol rule."},
+        {q:"The spread of the Black Death across Afro-Eurasia in the 14th century was primarily facilitated by:", c:["maritime exploration to the Americas","overland and maritime trade routes","the printing press","missionary activity"], a:1, e:"Trade routes like the Silk Roads carried the plague along with goods."},
+        {q:"Dhow ships and knowledge of monsoon winds were essential to trade in the:", c:["Mediterranean Sea","Indian Ocean","Atlantic Ocean","Caribbean Sea"], a:1, e:"Indian Ocean trade relied on seasonal monsoon winds and dhow vessels."}
+      ],
+      w3: [
+        {q:"The Ottoman devshirme system involved:", c:["taxing non-Muslim merchants","conscripting Christian boys for military/administrative service","granting land to Janissaries","forcing conversion of conquered nobility"], a:1, e:"Devshirme recruited and trained Christian boys, often becoming Janissaries or officials."},
+        {q:"The Mughal Emperor Akbar is best known for:", c:["expelling all non-Muslims from India","promoting religious tolerance and administrative reform","establishing the Delhi Sultanate","conquering the Ottoman Empire"], a:1, e:"Akbar promoted religious tolerance, including abolishing the jizya tax on non-Muslims."},
+        {q:"Absolutism in states like Russia under Peter the Great was characterized by:", c:["power shared equally with a parliament","centralized authority in a single monarch","decentralized feudal control","democratic elections"], a:1, e:"Absolutist rulers centralized political power, often justified by divine right."}
+      ],
+      w4: [
+        {q:"The Columbian Exchange resulted in which of the following being introduced TO the Americas?", c:["potatoes and maize","horses and smallpox","tomatoes and tobacco","cacao and turkeys"], a:1, e:"Europeans brought horses, livestock, and diseases like smallpox to the Americas."},
+        {q:"The encomienda system in Spanish America allowed colonizers to:", c:["trade freely with Asian merchants","extract forced labor and tribute from Indigenous peoples","elect local officials","establish independent republics"], a:1, e:"Encomienda granted Spanish colonists authority over Indigenous labor and tribute."},
+        {q:"The triangular trade of the Atlantic World connected Europe, Africa, and the Americas primarily through:", c:["the exchange of manufactured goods, enslaved people, and raw materials","missionary exchanges only","scientific knowledge sharing","diplomatic treaties"], a:0, e:"Ships carried manufactured goods to Africa, enslaved people to the Americas, and raw materials back to Europe."}
+      ],
+      w5: [
+        {q:"Enlightenment ideas about natural rights and social contract most directly influenced:", c:["the maintenance of absolute monarchies","revolutions such as the American and French Revolutions","the expansion of the encomienda system","the Mongol conquests"], a:1, e:"Thinkers like Locke and Rousseau inspired revolutionary movements challenging traditional authority."},
+        {q:"The Haitian Revolution (1791-1804) resulted in:", c:["the restoration of French colonial control","the first successful large-scale slave revolt establishing an independent nation","the immediate abolition of slavery throughout the Americas","a peaceful transition to self-rule"], a:1, e:"Haiti became the first Black-led republic and second independent nation in the Americas after defeating French forces."},
+        {q:"The Industrial Revolution began first in:", c:["Great Britain","France","the United States","Japan"], a:0, e:"Britain's resources, capital, and innovations launched industrialization in the late 1700s."}
+      ],
+      w6: [
+        {q:"Social Darwinism was used by some in this era to justify:", c:["labor union organizing","imperialism and racial hierarchies","universal suffrage","the abolition of slavery"], a:1, e:"Social Darwinist ideas were misapplied to justify imperial conquest and racial hierarchies."},
+        {q:"The \"Scramble for Africa\" in the late 19th century was formalized at the:", c:["Congress of Vienna","Berlin Conference","Treaty of Versailles","Congress of Berlin (1878)"], a:1, e:"The 1884-85 Berlin Conference divided Africa among European powers without African input."},
+        {q:"New imperialism in this period was driven in part by industrialized nations' need for:", c:["religious unity","raw materials and new markets","feudal land grants","isolationist policies"], a:1, e:"Industrial economies sought raw materials and markets, fueling imperial expansion."}
+      ],
+      w7: [
+        {q:"A major long-term cause of World War I was:", c:["the Columbian Exchange","a system of entangling alliances and militarism","the Mongol conquests","the Congress of Vienna"], a:1, e:"Alliance systems, militarism, imperialism, and nationalism set the stage for WWI."},
+        {q:"The Treaty of Versailles's harsh terms on Germany are often cited as contributing to:", c:["the rise of fascism and World War II","the end of colonialism","the Russian Revolution","the start of the Cold War"], a:0, e:"Economic hardship and resentment fueled the rise of Hitler and the Nazi Party."},
+        {q:"The Holocaust during World War II refers to:", c:["the atomic bombing of Japan","the Nazi genocide of six million Jews and millions of others","the Soviet purges under Stalin","the Armenian Genocide"], a:1, e:"The Holocaust was the systematic genocide of European Jews and other groups by Nazi Germany."}
+      ],
+      w8: [
+        {q:"The policy of containment guided U.S. Cold War foreign policy with the goal of:", c:["expanding communism globally","preventing the spread of communism","reuniting with the Soviet Union","promoting decolonization"], a:1, e:"Containment aimed to stop the spread of Soviet communism."},
+        {q:"The Non-Aligned Movement was formed by nations seeking to:", c:["join NATO","avoid formal alliances with either the US or USSR during the Cold War","support Soviet expansion","restore colonial rule"], a:1, e:"Nations like India and Indonesia sought independence from both Cold War blocs."},
+        {q:"Which best describes decolonization after WWII?", c:["European powers voluntarily gave up all colonies right after WWI","Nationalist movements across Asia and Africa gained independence, often through negotiation or armed struggle","Colonies were converted into permanent UN trust territories","Colonialism ended entirely by 1920"], a:1, e:"Post-WWII nationalist movements led to widespread decolonization in Asia and Africa."}
+      ],
+      w9: [
+        {q:"The formation of the European Union primarily aimed to:", c:["promote economic and political integration among member states","reestablish colonial empires","expand Soviet influence","create a single global government"], a:0, e:"The EU promotes economic and political cooperation among European nations."},
+        {q:"Global trade organizations like the WTO primarily work to:", c:["increase tariffs between nations","reduce trade barriers and regulate international trade","enforce military alliances","manage global immigration"], a:1, e:"The WTO facilitates and regulates international trade, generally lowering barriers."},
+        {q:"Which is a criticism commonly raised about globalization?", c:["It has eliminated all economic inequality","It can widen economic inequality and erode local cultures","It has ended international trade","It has had no environmental impact"], a:1, e:"Critics argue globalization can deepen inequality and threaten local cultures and environments."}
+      ]
+    }
+  };
+
+  function freshCourse(units){
+    return { categories: DEFAULT_CATEGORIES(), assignments: [], units: units, syllabus: '' };
+  }
+
+  var DEFAULT_DATA = {
+    target: 90,
+    settings: { lastNotif: '' },
+    courses: {
+      psych: freshCourse(defaultUnits(PSYCH_UNITS,'p')),
+      world: freshCourse(defaultUnits(WORLD_UNITS,'w'))
+    },
+    precalc: { examDate: '', topics: PRECALC_TOPICS.map(function(n,i){ return {id:'t'+(i+1), name:n, done:false}; }), notes:'' },
+    quizStats: { psych:{}, world:{} }
+  };
+
+  var COURSE_META = {
+    psych: {label:'AP Psychology', accent:'#8B7FE8'},
+    world: {label:'AP World History', accent:'#4FC7E0'}
+  };
+
+  var data;
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    data = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(DEFAULT_DATA));
+  } catch(e) { data = JSON.parse(JSON.stringify(DEFAULT_DATA)); }
+  if(!data.quizStats) data.quizStats = {psych:{},world:{}};
+  if(!data.settings) data.settings = {lastNotif:''};
+
+  var currentTab = 'dashboard';
+  var activeQuiz = null;
+
+  function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){} }
+  function uid(p){ return p+'-'+Date.now()+'-'+Math.floor(Math.random()*1000); }
+  function escapeHtml(s){ var d=document.createElement('div'); d.textContent = s==null?'':s; return d.innerHTML; }
+
+  function daysUntil(dateStr){
+    if(!dateStr) return null;
+    var target = new Date(dateStr+'T23:59:59');
+    var today = new Date();
+    return Math.ceil((target.getTime()-today.getTime())/86400000);
+  }
+  function fmtDate(dateStr){
+    if(!dateStr) return 'No date';
+    return new Date(dateStr+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  }
+  function urgencyClass(days){
+    if(days===null) return {dot:'sa-updot-ok',chip:'sa-upchip-ok',label:'—'};
+    if(days<0) return {dot:'sa-updot-danger',chip:'sa-upchip-danger',label:Math.abs(days)+'d overdue'};
+    if(days<=2) return {dot:'sa-updot-danger',chip:'sa-upchip-danger',label: days===0?'Due today':days+'d left'};
+    if(days<=7) return {dot:'sa-updot-warn',chip:'sa-upchip-warn',label:days+'d left'};
+    return {dot:'sa-updot-ok',chip:'sa-upchip-ok',label:days+'d left'};
+  }
+
+  function currentGrade(course){
+    var totalW=0, sum=0;
+    course.categories.forEach(function(c){
+      var possible=0, earned=0;
+      course.assignments.filter(function(a){return a.category===c.id && a.earned!=null;}).forEach(function(a){
+        possible += a.possible; earned += a.earned;
+      });
+      if(possible>0){ sum += (earned/possible*100)*c.weight; totalW += c.weight; }
+    });
+    return totalW>0 ? sum/totalW : null;
+  }
+
+  function overallWithX(course, x){
+    var totalW=0, sum=0;
+    course.categories.forEach(function(c){
+      var possible=0, earned=0, pending=0;
+      course.assignments.filter(function(a){return a.category===c.id;}).forEach(function(a){
+        if(a.earned!=null){ possible+=a.possible; earned+=a.earned; }
+        else { pending += a.possible; }
+      });
+      var denom = possible+pending;
+      if(denom<=0) return;
+      var pct = ((earned + x/100*pending)/denom)*100;
+      sum += pct*c.weight; totalW += c.weight;
+    });
+    return totalW>0 ? sum/totalW : null;
+  }
+
+  function neededForTarget(course, target){
+    var hasPending = course.assignments.some(function(a){ return a.earned==null && a.possible>0; });
+    if(!hasPending) return {mode:'none'};
+    var at0 = overallWithX(course, 0);
+    if(at0!==null && at0>=target) return {mode:'secured'};
+    var lo=0, hi=200;
+    for(var i=0;i<60;i++){
+      var mid=(lo+hi)/2;
+      var val=overallWithX(course, mid);
+      if(val===null) break;
+      if(val<target) lo=mid; else hi=mid;
+    }
+    var x=(lo+hi)/2;
+    if(x>100) return {mode:'impossible', needed:x};
+    return {mode:'ok', needed:x};
+  }
+
+  function gradeColor(pct, target){
+    if(pct==null) return '#5A6472';
+    if(pct>=target) return '#4FE0A0';
+    if(pct>=target-7) return '#E8B84B';
+    return '#E8604B';
+  }
+
+  function collectUpcoming(){
+    var items = [];
+    ['psych','world'].forEach(function(key){
+      var course = data.courses[key];
+      course.assignments.forEach(function(a){
+        if(a.earned==null && a.due){
+          items.push({course:key, courseLabel:COURSE_META[key].label, title:a.name, due:a.due, daysLeft:daysUntil(a.due)});
+        }
+      });
+    });
+    if(data.precalc.examDate){
+      items.push({course:'precalc', courseLabel:'Precalc CBE', title:'CBE Exam', due:data.precalc.examDate, daysLeft:daysUntil(data.precalc.examDate)});
+    }
+    items.sort(function(a,b){ return a.daysLeft - b.daysLeft; });
+    return items;
+  }
+
+  function unitMastery(courseKey, unitId){
+    var stat = data.quizStats[courseKey][unitId];
+    if(!stat || !stat.total) return null;
+    return Math.round(stat.correct/stat.total*100);
+  }
+
+  // ---------- rendering ----------
+
+  function renderApp(){
+    Array.prototype.forEach.call(document.querySelectorAll('.sa-navbtn'), function(btn){
+      btn.classList.toggle('on', btn.getAttribute('data-tab')===currentTab);
+    });
+    var view = document.getElementById('view');
+    if(currentTab==='dashboard') view.innerHTML = dashboardHtml();
+    else if(currentTab==='precalc') view.innerHTML = precalcHtml();
+    else view.innerHTML = courseHtml(currentTab);
+    attachViewEvents();
+    updateBadge();
+  }
+
+  function dashboardHtml(){
+    var upcoming = collectUpcoming();
+    var pPct = currentGrade(data.courses.psych);
+    var wPct = currentGrade(data.courses.world);
+
+    var lowest = null;
+    ['psych','world'].forEach(function(key){
+      var pct = currentGrade(data.courses[key]);
+      if(pct!=null && pct < data.target){
+        if(lowest===null || pct < lowest.pct) lowest = {key:key, pct:pct};
+      }
+    });
+    var focusParts = [];
+    if(lowest) focusParts.push('Your <b>'+escapeHtml(COURSE_META[lowest.key].label)+'</b> grade ('+lowest.pct.toFixed(1)+'%) is below your '+data.target+'% target — check what you need on remaining work.');
+    if(upcoming.length && upcoming[0].daysLeft<=3) focusParts.push('<b>'+escapeHtml(upcoming[0].title)+'</b> ('+escapeHtml(upcoming[0].courseLabel)+') is due '+(upcoming[0].daysLeft<=0?'now':'in '+upcoming[0].daysLeft+' day(s)')+'.');
+    var focusHtml = focusParts.length ? '<div class="sa-focus">🎯 <b>Focus today:</b> '+focusParts.join(' ')+'</div>' : '';
+
+    var upHtml;
+    if(upcoming.length===0){
+      upHtml = '<div class="sa-empty">Nothing due — add assignments in a course tab or set your CBE date.</div>';
+    } else {
+      upHtml = upcoming.slice(0,10).map(function(i){
+        var u = urgencyClass(i.daysLeft);
+        return '<div class="sa-uprow"><span class="sa-dot '+u.dot+'"></span>'+
+          '<div class="sa-uptext"><div class="sa-uptitle">'+escapeHtml(i.title)+'</div><div class="sa-upsub">'+escapeHtml(i.courseLabel)+' · '+fmtDate(i.due)+'</div></div>'+
+          '<span class="sa-upchip '+u.chip+'">'+u.label+'</span></div>';
+      }).join('');
+    }
+
+    var doneTopics = data.precalc.topics.filter(function(t){return t.done;}).length;
+    var totalTopics = data.precalc.topics.length;
+    var precalcPct = totalTopics ? Math.round(doneTopics/totalTopics*100) : 0;
+    var examDays = daysUntil(data.precalc.examDate);
+
+    return focusHtml +
+      '<div class="sa-gradegrid">'+
+        gradeCardHtml('psych', pPct)+
+        gradeCardHtml('world', wPct)+
+      '</div>'+
+      '<div class="sa-card"><div class="sa-card-head"><span class="sa-card-title">Coming Up</span><span class="sa-sub">'+upcoming.length+' item(s)</span></div>'+upHtml+'</div>'+
+      '<div class="sa-card" id="precalcDashCard" style="cursor:pointer">'+
+        '<div class="sa-card-head"><span class="sa-card-title">Precalc CBE Readiness</span><span class="sa-sub">'+(examDays!=null? (examDays>=0? examDays+'d to exam' : 'exam passed') : 'no date set')+'</span></div>'+
+        '<div class="sa-progressbar"><div class="sa-progressfill" style="width:'+precalcPct+'%"></div></div>'+
+        '<div style="font-size:12.5px;color:#8A94A3">'+doneTopics+' / '+totalTopics+' topics reviewed ('+precalcPct+'%)</div>'+
+      '</div>';
+  }
+
+  function gradeCardHtml(key, pct){
+    var m = COURSE_META[key];
+    var color = gradeColor(pct, data.target);
+    return '<div class="sa-gradecard" data-goto="'+key+'" style="border-color:'+color+'22">'+
+      '<div class="sa-gradecard-label">'+escapeHtml(m.label)+'</div>'+
+      '<div class="sa-gradecard-pct" style="color:'+color+'">'+(pct==null?'—':pct.toFixed(1)+'%')+'</div>'+
+      '<div class="sa-gradecard-target">target '+data.target+'%</div></div>';
+  }
+
+  function courseHtml(key){
+    if(activeQuiz && activeQuiz.course===key) return quizPanelHtml();
+
+    var course = data.courses[key];
+    var meta = COURSE_META[key];
+    var pct = currentGrade(course);
+    var color = gradeColor(pct, data.target);
+    var r=80, circumference=2*Math.PI*r;
+    var pctForRing = pct==null?0:Math.max(0,Math.min(100,pct));
+    var dash = (pctForRing/100)*circumference;
+
+    var need = neededForTarget(course, data.target);
+    var needText;
+    if(need.mode==='none') needText = pct==null ? 'Add assignments to start tracking your grade.' : 'All current work is graded. Add upcoming assignments to see what you need to stay on target.';
+    else if(need.mode==='secured') needText = "You're on track to hit "+data.target+"% even with 0% on remaining work. 🎉";
+    else if(need.mode==='impossible') needText = 'Reaching '+data.target+'% is not mathematically possible from remaining assignments alone — talk to your teacher about extra credit or retakes.';
+    else needText = 'You need to average <b style="color:'+color+'">~'+need.needed.toFixed(1)+'%</b> on your remaining graded work to hit '+data.target+'%.';
+
+    var catRows = course.categories.map(function(c){
+      return '<div class="sa-catrow"><span class="sa-catname">'+escapeHtml(c.name)+'</span><span class="sa-catweight">'+c.weight+'%</span><button class="sa-catdel" data-delcat="'+c.id+'">✕</button></div>';
+    }).join('');
+
+    var catOptions = course.categories.map(function(c){ return '<option value="'+c.id+'">'+escapeHtml(c.name)+'</option>'; }).join('');
+
+    var sortedA = course.assignments.slice().sort(function(a,b){
+      var da = a.due? new Date(a.due).getTime() : Infinity;
+      var db = b.due? new Date(b.due).getTime() : Infinity;
+      return da-db;
+    });
+    var aRows = sortedA.length===0 ? '<div class="sa-empty">No assignments yet — add key dates from your syllabus below.</div>' :
+      sortedA.map(function(a){
+        var cat = course.categories.filter(function(c){return c.id===a.category;})[0];
+        return '<div class="sa-arow">'+
+          '<span class="sa-aname">'+escapeHtml(a.name)+'<br><span class="sa-acat">'+escapeHtml(cat?cat.name:'—')+'</span></span>'+
+          '<span class="sa-adue">'+fmtDate(a.due)+'</span>'+
+          '<input class="sa-ascore" type="number" placeholder="—" value="'+(a.earned==null?'':a.earned)+'" data-score="'+a.id+'">'+
+          '<span class="sa-aof">/ '+a.possible+'</span>'+
+          '<button class="sa-adel" data-delassign="'+a.id+'">✕</button></div>';
+      }).join('');
+
+    var unitRows = course.units.map(function(u){
+      var m2 = unitMastery(key, u.id);
+      var mColor = m2==null ? '#5A6472' : (m2>=80?'#4FE0A0':(m2>=50?'#E8B84B':'#E8604B'));
+      return '<div class="sa-unitrow"><span class="sa-unitname">'+escapeHtml(u.name)+'</span>'+
+        '<span class="sa-unitmastery" style="color:'+mColor+'">'+(m2==null?'Not started':m2+'% mastery')+'</span>'+
+        '<button class="sa-btn sa-btn-ghost sa-btn-sm" data-quiz="'+u.id+'">Practice</button></div>';
+    }).join('');
+
+    return '<div class="sa-card">'+
+      '<div class="sa-gaugewrap"><svg viewBox="0 0 200 200" class="sa-gauge">'+
+        '<circle cx="100" cy="100" r="'+r+'" class="sa-ring-track" stroke-width="14" fill="none"></circle>'+
+        '<circle cx="100" cy="100" r="'+r+'" class="sa-ring-fill" stroke-width="14" fill="none" stroke-linecap="round" transform="rotate(-90 100 100)" stroke="'+color+'" stroke-dasharray="'+dash+' '+circumference+'"></circle>'+
+      '</svg><div class="sa-gauge-center"><span class="sa-gauge-amount" style="color:'+color+'">'+(pct==null?'—':pct.toFixed(1)+'%')+'</span><span class="sa-gauge-of">target '+data.target+'%</span></div></div>'+
+      '<div class="sa-needbox">'+needText+'</div>'+
+      '</div>'+
+
+      '<div class="sa-card"><div class="sa-card-head"><span class="sa-card-title">Grade Categories</span></div>'+
+      '<div class="sa-catlist">'+catRows+'</div>'+
+      '<div class="sa-row" style="margin-bottom:8px">'+
+        '<input class="sa-field" id="catNameInput" placeholder="Category name" style="flex:2">'+
+        '<input class="sa-field" id="catWeightInput" type="number" placeholder="Weight %" style="flex:1">'+
+      '</div>'+
+      '<button class="sa-btn sa-btn-ghost" id="addCatBtn">Add category</button></div>'+
+
+      '<div class="sa-card"><div class="sa-card-head"><span class="sa-card-title">Assignments &amp; Deadlines</span></div>'+
+      '<div class="sa-alist">'+aRows+'</div>'+
+      '<div class="sa-field" style="margin-bottom:8px"><input id="aNameInput" placeholder="Assignment / test name"></div>'+
+      '<div class="sa-row" style="margin-bottom:8px">'+
+        '<select id="aCatInput">'+catOptions+'</select>'+
+        '<input id="aDueInput" type="date">'+
+      '</div>'+
+      '<div class="sa-row" style="margin-bottom:10px"><input id="aPossibleInput" type="number" placeholder="Points possible"></div>'+
+      '<button class="sa-btn sa-btn-gold" id="addAssignBtn">Add assignment</button></div>'+
+
+      '<div class="sa-card"><div class="sa-card-head"><span class="sa-card-title">Units &amp; Practice</span></div>'+unitRows+'</div>'+
+
+      '<div class="sa-card"><div class="sa-card-head"><span class="sa-card-title">Syllabus Notes</span></div>'+
+      '<textarea class="sa-field sa-notes" id="syllabusInput" placeholder="Paste your syllabus text here — key policies, grading breakdown, unit calendar...">'+escapeHtml(course.syllabus)+'</textarea>'+
+      '<div style="height:8px"></div><button class="sa-btn sa-btn-ghost" id="saveSyllabusBtn">Save notes</button></div>';
+  }
+
+  function quizPanelHtml(){
+    var key = activeQuiz.course;
+    var course = data.courses[key];
+    var unit = course.units.filter(function(u){return u.id===activeQuiz.unitId;})[0];
+    var q = activeQuiz.questions[activeQuiz.index];
+    var choicesHtml = q.c.map(function(choice, idx){
+      var cls = 'sa-choice';
+      if(activeQuiz.revealed){
+        if(idx===q.a) cls += ' sa-choice-correct';
+        else if(idx===activeQuiz.selected) cls += ' sa-choice-wrong';
+      }
+      return '<button class="'+cls+'" data-choice="'+idx+'" '+(activeQuiz.revealed?'disabled':'')+'>'+escapeHtml(choice)+'</button>';
+    }).join('');
+
+    return '<div class="sa-card"><div class="sa-card-head"><span class="sa-card-title">'+escapeHtml(unit.name)+'</span>'+
+      '<button class="sa-btn sa-btn-ghost sa-btn-sm" id="exitQuizBtn">Exit</button></div>'+
+      '<div class="sa-qcard"><div class="sa-qprog">Question '+(activeQuiz.index+1)+' of '+activeQuiz.questions.length+' · '+activeQuiz.correct+' correct so far</div>'+
+      '<div class="sa-qtext">'+escapeHtml(q.q)+'</div>'+
+      choicesHtml+
+      (activeQuiz.revealed ? '<div class="sa-explain">'+escapeHtml(q.e)+'</div><button class="sa-btn sa-btn-gold" id="nextQBtn">'+(activeQuiz.index+1<activeQuiz.questions.length?'Next question':'Finish')+'</button>' : '')+
+      '</div></div>';
+  }
+
+  function precalcHtml(){
+    var doneTopics = data.precalc.topics.filter(function(t){return t.done;}).length;
+    var totalTopics = data.precalc.topics.length;
+    var pct = totalTopics ? Math.round(doneTopics/totalTopics*100) : 0;
+    var days = daysUntil(data.precalc.examDate);
+
+    var rows = data.precalc.topics.map(function(t){
+      return '<div class="sa-topicrow"><input type="checkbox" data-topic="'+t.id+'" '+(t.done?'checked':'')+'>'+
+        '<span class="sa-topicname '+(t.done?'done':'')+'">'+escapeHtml(t.name)+'</span></div>';
+    }).join('');
+
+    return '<div class="sa-card">'+
+      '<div class="sa-card-head"><span class="sa-card-title">Precalculus CBE Prep</span><span class="sa-sub">'+(days!=null?(days>=0?days+'d left':'passed'):'set a date')+'</span></div>'+
+      '<div class="sa-progressbar"><div class="sa-progressfill" style="width:'+pct+'%"></div></div>'+
+      '<div style="font-size:12.5px;color:#8A94A3;margin-bottom:14px">'+doneTopics+' / '+totalTopics+' topics reviewed ('+pct+'%)</div>'+
+      '<div class="sa-field" style="margin-bottom:10px"><label for="precalcDateInput">Exam / CBE date</label><input id="precalcDateInput" type="date" value="'+(data.precalc.examDate||'')+'"></div>'+
+      '</div>'+
+      '<div class="sa-card"><div class="sa-card-head"><span class="sa-card-title">Topic Checklist</span></div>'+rows+'</div>'+
+      '<div class="sa-card"><div class="sa-card-head"><span class="sa-card-title">Notes</span></div>'+
+      '<textarea class="sa-field sa-notes" id="precalcNotesInput" placeholder="Formulas to remember, weak spots, practice resources...">'+escapeHtml(data.precalc.notes)+'</textarea>'+
+      '<div style="height:8px"></div><button class="sa-btn sa-btn-ghost" id="savePrecalcNotesBtn">Save notes</button></div>';
+  }
+
+  // ---------- events ----------
+
+  function attachViewEvents(){
+    if(currentTab==='dashboard'){
+      Array.prototype.forEach.call(document.querySelectorAll('[data-goto]'), function(el){
+        el.addEventListener('click', function(){ currentTab = el.getAttribute('data-goto'); renderApp(); });
+      });
+      var pc = document.getElementById('precalcDashCard');
+      if(pc) pc.addEventListener('click', function(){ currentTab='precalc'; renderApp(); });
+      return;
+    }
+    if(currentTab==='precalc'){
+      Array.prototype.forEach.call(document.querySelectorAll('[data-topic]'), function(box){
+        box.addEventListener('change', function(){
+          var t = data.precalc.topics.filter(function(x){return x.id===box.getAttribute('data-topic');})[0];
+          if(t){ t.done = box.checked; save(); renderApp(); }
+        });
+      });
+      document.getElementById('precalcDateInput').addEventListener('change', function(e){
+        data.precalc.examDate = e.target.value; save(); renderApp();
+      });
+      document.getElementById('savePrecalcNotesBtn').addEventListener('click', function(){
+        data.precalc.notes = document.getElementById('precalcNotesInput').value; save();
+      });
+      return;
+    }
+
+    if(activeQuiz && activeQuiz.course===currentTab){
+      var exitBtn = document.getElementById('exitQuizBtn');
+      if(exitBtn) exitBtn.addEventListener('click', function(){ activeQuiz=null; renderApp(); });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-choice]'), function(btn){
+        btn.addEventListener('click', function(){
+          if(activeQuiz.revealed) return;
+          var idx = parseInt(btn.getAttribute('data-choice'),10);
+          activeQuiz.selected = idx;
+          activeQuiz.revealed = true;
+          if(idx===activeQuiz.questions[activeQuiz.index].a) activeQuiz.correct++;
+          renderApp();
+        });
+      });
+      var nextBtn = document.getElementById('nextQBtn');
+      if(nextBtn) nextBtn.addEventListener('click', function(){
+        activeQuiz.index++;
+        activeQuiz.selected=null; activeQuiz.revealed=false;
+        if(activeQuiz.index>=activeQuiz.questions.length){
+          var key=activeQuiz.course, unitId=activeQuiz.unitId;
+          if(!data.quizStats[key][unitId]) data.quizStats[key][unitId] = {correct:0,total:0};
+          data.quizStats[key][unitId].correct += activeQuiz.correct;
+          data.quizStats[key][unitId].total += activeQuiz.questions.length;
+          save();
+          activeQuiz = null;
+        }
+        renderApp();
+      });
+      return;
+    }
+
+    var key = currentTab;
+    var course = data.courses[key];
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-delcat]'), function(btn){
+      btn.addEventListener('click', function(){
+        course.categories = course.categories.filter(function(c){return c.id!==btn.getAttribute('data-delcat');});
+        save(); renderApp();
+      });
+    });
+    var addCatBtn = document.getElementById('addCatBtn');
+    if(addCatBtn) addCatBtn.addEventListener('click', function(){
+      var name = document.getElementById('catNameInput').value.trim();
+      var weight = parseFloat(document.getElementById('catWeightInput').value);
+      if(!name || !weight || weight<=0) return;
+      course.categories.push({id:uid('cat'), name:name, weight:weight});
+      save(); renderApp();
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-delassign]'), function(btn){
+      btn.addEventListener('click', function(){
+        course.assignments = course.assignments.filter(function(a){return a.id!==btn.getAttribute('data-delassign');});
+        save(); renderApp();
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-score]'), function(inp){
+      inp.addEventListener('change', function(){
+        var a = course.assignments.filter(function(x){return x.id===inp.getAttribute('data-score');})[0];
+        if(!a) return;
+        var v = inp.value==='' ? null : parseFloat(inp.value);
+        a.earned = (v==null || isNaN(v)) ? null : v;
+        save(); renderApp();
+      });
+    });
+    var addAssignBtn = document.getElementById('addAssignBtn');
+    if(addAssignBtn) addAssignBtn.addEventListener('click', function(){
+      var name = document.getElementById('aNameInput').value.trim();
+      var cat = document.getElementById('aCatInput').value;
+      var due = document.getElementById('aDueInput').value;
+      var possible = parseFloat(document.getElementById('aPossibleInput').value);
+      if(!name || !possible || possible<=0) return;
+      course.assignments.push({id:uid('a'), name:name, category:cat, due:due||'', possible:possible, earned:null});
+      save(); renderApp();
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-quiz]'), function(btn){
+      btn.addEventListener('click', function(){
+        var unitId = btn.getAttribute('data-quiz');
+        var bank = QUIZ_BANK[key][unitId] || [];
+        if(!bank.length) return;
+        var shuffled = bank.slice().sort(function(){return Math.random()-0.5;});
+        activeQuiz = {course:key, unitId:unitId, questions:shuffled, index:0, correct:0, selected:null, revealed:false};
+        renderApp();
+      });
+    });
+
+    var saveSyllabusBtn = document.getElementById('saveSyllabusBtn');
+    if(saveSyllabusBtn) saveSyllabusBtn.addEventListener('click', function(){
+      course.syllabus = document.getElementById('syllabusInput').value; save();
+    });
+  }
+
+  document.getElementById('settingsBtn').addEventListener('click', function(){
+    document.getElementById('settingsPanel').classList.toggle('open');
+  });
+  document.getElementById('targetInput').value = data.target;
+  document.getElementById('examDateInput').value = data.precalc.examDate;
+  document.getElementById('saveSettingsBtn').addEventListener('click', function(){
+    var t = parseFloat(document.getElementById('targetInput').value);
+    if(t && t>0) data.target = t;
+    data.precalc.examDate = document.getElementById('examDateInput').value;
+    save();
+    document.getElementById('settingsPanel').classList.remove('open');
+    renderApp();
+  });
+  document.getElementById('notifBtn').addEventListener('click', function(){
+    if(!('Notification' in window)){ alert('Notifications are not supported in this browser.'); return; }
+    Notification.requestPermission().then(function(perm){
+      if(perm==='granted') checkReminders();
+    });
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.sa-navbtn'), function(btn){
+    btn.addEventListener('click', function(){
+      currentTab = btn.getAttribute('data-tab');
+      activeQuiz = null;
+      renderApp();
+    });
+  });
+
+  function checkReminders(){
+    if(!('Notification' in window) || Notification.permission!=='granted') return;
+    var today = new Date().toDateString();
+    if(data.settings.lastNotif===today) return;
+    var items = collectUpcoming().filter(function(i){ return i.daysLeft!=null && i.daysLeft<=1 && i.daysLeft>=0; });
+    if(items.length){
+      var body = items.map(function(i){ return i.courseLabel+': '+i.title; }).join('\n');
+      try{ new Notification('Due soon', {body:body}); }catch(e){}
+    }
+    data.settings.lastNotif = today;
+    save();
+  }
+
+  function updateBadge(){
+    var n = collectUpcoming().filter(function(i){ return i.daysLeft!=null && i.daysLeft<=2; }).length;
+    if('setAppBadge' in navigator){
+      if(n>0) navigator.setAppBadge(n).catch(function(){});
+      else if('clearAppBadge' in navigator) navigator.clearAppBadge().catch(function(){});
+    }
+  }
+
+  save();
+  renderApp();
+  checkReminders();
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
